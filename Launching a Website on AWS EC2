@@ -1,0 +1,151 @@
+Launching a Website on AWS EC2
+Read the better version here - https://github.com/jpsingh88/AWS-SAA-C03/wiki/Launching-a-Website-on-AWS-EC2
+
+Introduction
+
+Welcome! This guide will walk you through the process of launching a web server on Amazon Web Services (AWS) using EC2 (Elastic Compute Cloud) and setting up a simple website. EC2 provides virtual servers in the cloud, allowing you to run applications and websites without managing physical hardware. We'll be using Linux as the operating system for our server.
+
+Prerequisites
+
+AWS Account: You'll need an AWS account. If you don't have one, you can sign up at https://aws.amazon.com/. Note that AWS provides a Free Tier, but not all services are included. Be mindful of potential costs.
+Basic Computer Knowledge: Familiarity with using a computer, internet browsing, and basic command-line concepts will be helpful.
+Step-by-Step Guide
+
+Part 1: Launching an EC2 Instance
+
+Sign In to the AWS Management Console:
+
+Open your web browser and go to https://aws.amazon.com/.
+Click on "Sign In to the Console."
+Enter your AWS account credentials (email and password).
+Navigate to the EC2 Service:
+
+In the AWS Management Console, use the search bar at the top and type "EC2".
+Click on "EC2" from the search results to go to the EC2 Dashboard.
+image
+
+
+Launch a New Instance:
+On the EC2 Dashboard, click the "Launch instance" button.
+Make sure to select the region on the top-right in which you want to create the instance.
+Give the Instance a name. For example, I've given the name "web-01"
+image
+
+
+Add Tags:
+Tags are labels that help you organize and manage your resources. This step is optional, but adding a tag now can be helpful later.
+Click "Add Tag"
+Type Name in the Key field and web-01 in the Value field.
+If you want to give additional tags, you may add Environment in the Key field and dev in the Value field and so on.
+image
+
+
+Choose an Amazon Machine Image (AMI):
+An AMI is a pre-configured template that contains the operating system and software you want to use.
+In the AMI selection screen, find "Amazon Linux 2023" and select it.
+It will be marked as "Free tier eligible".
+image
+
+
+Choose an Instance Type:
+The instance type determines the hardware configuration of your virtual server (CPU, memory, etc.).
+Select the t2.micro instance type. This instance type is generally free tier eligible.
+image
+
+
+Select Key Pair:
+You'll need a key pair to securely connect to your instance.
+If you don't have an existing key pair, select "Create a new key pair."
+Enter a name for your key pair (e.g., "web-01-key").
+Click "Create Key Pair" and save the .pem file to a secure location on your computer. This is very important! You won't be able to download it again.
+image
+
+
+Configure Network Settings:
+A Security Group acts as a virtual firewall that controls traffic to and from your instance.
+Select "Create a new security group".
+Give your security group a name like "web-server-sg".
+Give your security group a description like "Allow HTTP and SSH traffic".
+Add a rule to allow HTTP (web traffic) from anywhere. Click "Add Rule".
+Type: HTTP
+Source: Anywhere
+Ensure that SSH rule to allow only your IP address (instead of anywhere) to connect.
+image
+
+
+Configure Storage:
+
+Leave the storage settings as default.
+Review and Launch:
+
+Review all the settings you've configured.
+Click "Launch instance".
+View Launch Status:
+
+You'll be redirected to a page showing the launch status.
+Click "View Instances" to see your instance in the EC2 Dashboard.
+Part 2: Connecting to Your Instance and Setting Up a Website
+
+Find Your Instance's Public IP Address:
+In the EC2 Dashboard, find the instance you just launched.
+Select it, and look for the "Public IPv4 address" (or "Public IPv4 DNS") in the details below. This is the address you'll use to connect to your server.
+image
+
+
+Connect to Your Instance Using SSH:
+
+Linux or macOS: Open your terminal.
+Use the following command, replacing your-key.pem with the path to your key file and your-public-ip with the Public IP address you found:
+ssh -i "your-key.pem" ec2-user@your-public-ip
+Update Your Server:
+
+Once connected, run the following commands to update the package manager and install updates:
+sudo yum update -y
+Install a Web Server (Apache):
+
+sudo yum install httpd -y
+Start the Web Server:
+
+sudo systemctl start httpd
+Enable the Web Server to Start on Boot:
+
+sudo systemctl enable httpd
+Configure the Firewall:
+
+You might need to configure the firewall to allow HTTP traffic. Run the following commands:
+sudo firewall-cmd --permanent --zone=public --add-service=http
+sudo firewall-cmd --reload
+Create a Simple Website:
+
+Create a basic index.html file:
+sudo nano /var/www/html/index.html
+Paste the following HTML code into the file:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My First Website on AWS!</title>
+</head>
+<body>
+    <h1>Hello from AWS!</h1>
+    <p>This is a simple website hosted on an EC2 instance.</p>
+</body>
+</html>
+Press Ctrl+X, then Y, then Enter to save the file.
+Test Your Website:
+
+Open your web browser and enter your instance's Public IP address in the address bar.
+You should see your "Hello from AWS!" website.
+Part 3: Important Considerations
+
+Security:
+Keep your key pair safe. If it's compromised, someone could gain access to your server.
+Regularly update your server's software to patch security vulnerabilities.
+Use strong passwords for any user accounts you create.
+Cost:
+Be aware of the costs associated with running an EC2 instance. While t2.micro is often free tier eligible, other resources may incur charges. Monitor your AWS billing dashboard.
+Stop your instance when you're not using it to avoid unnecessary costs.
+Storage:
+The default storage is limited. If you need more, you can add additional EBS volumes.
+Conclusion
+
+Congratulations! You've successfully launched an EC2 instance and deployed a simple website. This is just a starting point. You can now explore more advanced configurations, install different web servers, and deploy more complex applications. Good luck!
