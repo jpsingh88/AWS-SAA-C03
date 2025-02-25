@@ -1,0 +1,200 @@
+Read the better version here - https://github.com/jpsingh88/AWS-SAA-C03/wiki/Securing-Web-Access-on-AWS-EC2:-A-VPC-Subnet-and-Security-Group-Setup
+
+Introduction
+This guide will walk you through the process of creating a Virtual Private Cloud (VPC) in Amazon Web Services (AWS), focusing on setting up security using Security Groups and Network Access Control Lists (NACLs). We'll then launch an EC2 instance within this VPC and configure its security. A VPC provides a logically isolated section of the AWS Cloud where you can launch AWS resources in a virtual network that you define. Security Groups and NACLs are essential for controlling network traffic in and out of your VPC.
+
+Prerequisites
+
+AWS Account: You need an AWS account. If you don't have one, sign up at https://aws.amazon.com/.
+Part 1: Creating a VPC
+
+Sign In to the AWS Management Console:
+
+Open your web browser and go to https://aws.amazon.com/.
+Click on "Sign In to the Console."
+Enter your AWS account credentials.
+Navigate to the VPC Service:
+
+In the AWS Management Console, search for "VPC" and click on the "VPC" service. image
+
+Create a VPC:
+
+In the VPC Dashboard, click "Create VPC". image
+
+Select "VPC and more". AWS will create subnets, route tables, and an internet gateway for you. image
+
+Configure VPC Settings:
+
+Name tag: Give your VPC a descriptive name, like "vpc-mini-project".
+IPv4 CIDR block: This defines the IP address range for your VPC. For example, 10.0.0.0/16 will give you 65,536 private IPv4 addresses (10.0.0.0 - 10.0.255.255). Using a smaller range of IPv4 addresses for this demo
+Availability Zones (AZs): Determine how many availability zones that you want. Since this project involves 1 AZ, so I'll be selecting 1 in this scenario.
+Number of public subnets: Specify the number of public subnets needed. Selecting 1 for this scenario
+Number of private subnets: Specify the number of private subnets needed. Selecting 1 for this scenario
+NAT gateways: Selecting In 1 AZ for this demo
+VPC endpoints: For now, you can put it as None.
+Click "Create VPC". AWS will create the VPC and associated resources (subnets, route tables, Internet Gateway, NACL).
+image
+
+image
+
+
+Inspect Your VPC:
+In the VPC Dashboard, click on "Your VPCs" and select the VPC you just created.
+Go to Resource map to understand about the newly created VPC.
+Note the VPC ID. You'll need it later.
+Examine the subnets that were created. You'll see both public and private subnets.
+image
+
+
+Part 2: Understanding Security Groups and NACLs
+
+Security Groups: Act as a virtual firewall at the instance level. They control inbound and outbound traffic for EC2 instances.
+
+Inbound Rules: Determine which traffic is allowed into the instance. You can specify protocols (TCP, UDP, ICMP), ports, and source IP addresses or CIDR blocks.
+Outbound Rules: Determine which traffic is allowed to leave the instance. Similar to inbound rules, you can specify protocols, ports, and destination IP addresses or CIDR blocks.
+Default Behavior:
+Inbound: By default, all inbound traffic is denied. You must explicitly add rules to allow it.
+Outbound: By default, all outbound traffic is allowed. You can restrict it if needed.
+Network Access Control Lists (NACLs): Act as a virtual firewall at the subnet level. They control traffic in and out of subnets.
+
+Rules: NACLs contain numbered rules that specify whether to allow or deny traffic based on protocol, port, and source/destination IP addresses or CIDR blocks.
+Rule Evaluation: NACLs evaluate rules in numerical order. The first rule that matches the traffic determines whether it's allowed or denied.
+Explicit Allow/Deny: NACLs have both allow and deny rules. This allows you to explicitly block certain types of traffic.
+Default Behavior:
+NACLs contain default rules that allow all traffic in and out. However, it's a best practice to customize them.
+Key Differences Between Security Groups and NACLs:
+
+Feature	Security Group	NACL
+Level	Instance level	Subnet level
+Allow/Deny	Only Allow	Allow and Deny
+Stateful/Stateless	Stateful (responses to allowed inbound traffic are automatically allowed outbound)	Stateless (rules are evaluated for both inbound and outbound traffic)
+Evaluation	All rules are evaluated	Rules are evaluated in numerical order
+Part 3: Launching an EC2 Instance in Your VPC
+
+Refer to my previous article for details on how to launch an EC2 Instance here: https://github.com/jpsingh88/AWS-SAA-C03/wiki/Launching-a-Website-on-AWS-EC2
+
+Navigate to the EC2 Service:
+
+In the AWS Management Console, search for "EC2" and click on the "EC2" service.
+Launch an Instance:
+
+In the EC2 Dashboard, click "Launch Instance".
+Choose an AMI:
+
+Select an Amazon Machine Image (AMI). For this example, choose Ubuntu or Amazon Linux 2 AMI.
+Choose an Instance Type:
+
+Select an instance type. t2.micro is suitable for testing and is often free tier eligible.
+Configure Instance Details:
+
+Network: Select the VPC you created ("MyCustomVPC").
+Subnet: Choose a public subnet within your VPC.
+Auto-assign Public IP: Enable "Auto-assign Public IP" so your instance gets a public IP address for internet access (important for this example).
+Leave the other configurations as default. image
+
+image
+
+Configure Security Group:
+
+Select "Create a new security group".
+Give your security group a name (e.g., "vpc-demo-sg").
+Add an inbound rule to allow SSH traffic from your IP address. This allows you to connect to the instance.
+Type: SSH
+Source: My IP (AWS will detect your current IP) image
+
+Add Storage, Tags, and Review:
+
+Accept the default storage settings.
+Add a tag (optional) for easy identification (e.g., Name: vpc-demo-ec2).
+Review your settings and click "Launch".
+Select Key Pair:
+
+Select an existing key pair or create a new one. Download the .pem file and store it securely. You'll need this to connect to your instance.
+Launch the Instance:
+
+Click "Launch Instances".
+Part 4: Connecting to Your Instance and Testing Security
+
+Get Your Instance's Public IP:
+
+In the EC2 Dashboard, find your running instance.
+Note its "Public IPv4 address".
+Connect to Your Instance via SSH:
+
+Linux/macOS:
+
+ssh -i "path/to/your/key.pem" ubuntu@your_public_ip
+(Replace ubuntu with ec2-user if you're using Amazon Linux)
+
+Windows (PuTTY): Use PuTTY to connect. You'll need to convert your .pem file to .ppk format using PuTTYgen.
+
+Install a Web Server (Example: Python Simple HTTP Server):
+
+sudo yum update -y
+sudo yum install python3 -y
+python3 -m http.server 8000
+
+image
+
+4. Test Website Access: * Open your web browser and enter http://your_public_ip:8000. * Initially, you probably won't see anything because the Security Group only allows SSH traffic.
+
+Configure Security Group to Allow Web Traffic:
+In the EC2 Dashboard, find the security group associated with your instance.
+
+Edit the inbound rules.
+
+Add a new rule to allow HTTP traffic (port 8000) from anywhere.
+
+Type: Custom TCP
+Port Range: 8000
+Source: Anywhere IPv4 (0.0.0.0/0)
+Refresh your web browser. You should now see the directory listing from the Python web server.
+
+image
+
+image
+
+
+Experiment with NACLs:
+Navigate to the VPC service.
+
+Click "Network ACLs".
+
+Find the NACL associated with the public subnet you're using. image
+
+
+Deny Web Traffic (NACL): Edit the inbound rules of the NACL and add a rule with a lower number (e.g., 100) to deny traffic on port 8000 from anywhere.
+
+Rule number: 100
+Type: Custom TCP
+Port Range: 8000
+Source: 0.0.0.0/0
+Action: Deny image
+
+Refresh your web browser. You'll find that the traffic is now blocked, even though the Security Group allows it. This is because NACLs are evaluated before Security Groups. image
+
+
+Allow Web Traffic (NACL): Edit the inbound rules. Set a rule with a lower number to allow traffic.
+
+Rule number: 100
+Type: Custom TCP
+Port Range: 8000
+Source: 0.0.0.0/0
+Action: Allow
+Refresh your web browser. The website should work again. image
+
+image
+
+
+
+
+Part 5: Important Security Considerations
+
+Least Privilege: Only allow the minimum necessary traffic in your Security Groups and NACLs. Avoid allowing "all traffic" from "anywhere."
+Regularly Review Rules: Periodically review your Security Group and NACL rules to ensure they are still appropriate and secure.
+Stateful vs. Stateless: Remember that Security Groups are stateful, while NACLs are stateless. This affects how responses to traffic are handled.
+Shared Responsibility: Remember that AWS has the fundamental responsibility to add security, however, security should be a shared responsibility with the AWS admins.
+Conclusion
+
+You've now created a secure VPC, launched an EC2 instance within it, and learned how to use Security Groups and NACLs to control network traffic. Keep playing and experiment with the configuration!
+
